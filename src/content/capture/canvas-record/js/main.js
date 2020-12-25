@@ -68,37 +68,23 @@ function toggleRecording() {
 
 // The nested try blocks will be simplified when Chrome 47 moves to Stable
 function startRecording() {
-  let options = {mimeType: 'video/webm'};
-  recordedBlobs = [];
-  try {
-    mediaRecorder = new MediaRecorder(stream, options);
-  } catch (e0) {
-    console.log('Unable to create MediaRecorder with options Object: ', e0);
-    try {
-      options = {mimeType: 'video/webm,codecs=vp9'};
-      mediaRecorder = new MediaRecorder(stream, options);
-    } catch (e1) {
-      console.log('Unable to create MediaRecorder with options Object: ', e1);
-      try {
-        options = 'video/vp8'; // Chrome 47
-        mediaRecorder = new MediaRecorder(stream, options);
-      } catch (e2) {
-        alert('MediaRecorder is not supported by this browser.\n\n' +
-          'Try Firefox 29 or later, or Chrome 47 or later, ' +
-          'with Enable experimental Web Platform features enabled from chrome://flags.');
-        console.error('Exception while creating MediaRecorder:', e2);
-        return;
-      }
+  let recordedBlobs = [];
+  const recorder = new MediaRecorder(canvas.captureStream(), {mimeType: 'video/webm'});
+  recorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) {
+      recordedBlobs.push(e.data);
     }
+  };
+  recorder.onstop = () => {
+    const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+    let reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => document.getElementById("console").innerText = reader.result;
   }
-  console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
-  recordButton.textContent = 'Stop Recording';
-  playButton.disabled = true;
-  downloadButton.disabled = true;
-  mediaRecorder.onstop = handleStop;
-  mediaRecorder.ondataavailable = handleDataAvailable;
-  mediaRecorder.start(100); // collect 100ms of data
-  console.log('MediaRecorder started', mediaRecorder);
+  recorder.start();
+  setTimeout(() => {
+    recorder.stop();
+  }, 2000);
 }
 
 function stopRecording() {
