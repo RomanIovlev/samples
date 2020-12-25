@@ -82,6 +82,7 @@ function startRecording() {
     reader.onloadend = () => document.getElementById("console").innerText = reader.result;
   }
   recorder.start();
+
   setTimeout(() => {
     recorder.stop();
   }, 2000);
